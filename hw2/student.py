@@ -53,33 +53,30 @@ class Network(nn.Module):
         super(Network, self).__init__()
         self.conv1=nn.Conv2d(in_channels = 3, out_channels = 64,kernel_size = 5, padding=2) 
         self.max_pool=nn.MaxPool2d(2,2) 
-        self.conv2=nn.Conv2d(in_channels =64 + 3,out_channels = 24,kernel_size = 5, padding=2) 
+        self.conv2=nn.Conv2d(in_channels =64,out_channels = 24,kernel_size = 5, padding=2) 
         self.fc_layer_1=nn.Linear(9600,230)
         self.fc_layer_2=nn.Linear(230,8)
         
     def forward(self, input):
-        self.hid1 = F.relu(self.conv1(input))
-        layer2Input = torch.cat([input, self.hid1], dim = 1)
-        layer2 = self.max_pool(layer2Input)
-        self.hid2 = F.relu(self.conv2(layer2))
-        layer3Input = torch.cat([input, self.hid1, self.hid2], dim = 1)
-        layer4 = self.max_pool(layer3Input)
-        layer5 = layer4.view(layer4.size(0), -1)  #flattening the inputs. 
-        self.hid3 = F.relu(self.fc_layer_1(layer5))
-        layer4Input = torch.cat([input, self.hid1, self.hid2, self.hid3], dim = 1)
-        layer7 = self.fc_layer_2(layer4Input)
-        self.hid4 = F.log_softmax(layer7, dim=1)
-        return self.hid4
+        input = F.relu(self.conv1(input))
+        input = self.max_pool(input)
+        input = F.relu(self.conv2(input))
+        input = self.max_pool(input)
+        input = input.view(input.size(0), -1)  #flattening the inputs. 
+        input = F.relu(self.fc_layer_1(input))
+        input = self.fc_layer_2(input)
+        input = F.log_softmax(input, dim=1)  
+        return input 
   
 
-    def forward(self, input):
-        input = input[-2]
-        print(input.shape)
-        self.hid1 = torch.tanh(self.lay1(input))
-        layer2Input = torch.cat([input, self.hid1], dim = 1)
-        self.hid2 = torch.tanh(self.lay2(layer2Input))
-        outInput = torch.cat([self.hid2, self.hid1, input], dim = 1)
-        return torch.sigmoid(self.lay3(outInput))
+    # def forward(self, input):
+    #     input = input[-2]
+    #     print(input.shape)
+    #     self.hid1 = torch.tanh(self.lay1(input))
+    #     layer2Input = torch.cat([input, self.hid1], dim = 1)
+    #     self.hid2 = torch.tanh(self.lay2(layer2Input))
+    #     outInput = torch.cat([self.hid2, self.hid1, input], dim = 1)
+    #     return torch.sigmoid(self.lay3(outInput))
 
 net = Network()
     
