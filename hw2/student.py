@@ -36,6 +36,8 @@ def transform(mode):
     https://pytorch.org/vision/stable/transforms.html
     You may specify different transforms for training and testing
     """
+
+    # Transforms should do things like cropping, padding, normalizing etc.
     if mode == 'train':
         return transforms.ToTensor()
     elif mode == 'test':
@@ -46,21 +48,50 @@ def transform(mode):
 ######   Define the Module to process the images and produce labels   ######
 ############################################################################
 class Network(nn.Module):
-
     def __init__(self):
-        super().__init__()
+        # from assignment 1
+        super(Network, self).__init__()
+        self.conv1=nn.Conv2d(in_channels = 3, out_channels = 64,kernel_size = 5, padding=2) 
+        self.max_pool=nn.MaxPool2d(2,2) 
+        self.conv2=nn.Conv2d(in_channels =64 + 3,out_channels = 24,kernel_size = 5, padding=2) 
+        self.fc_layer_1=nn.Linear(9600,230)
+        self.fc_layer_2=nn.Linear(230,8)
         
     def forward(self, input):
-        pass
+        self.hid1 = F.relu(self.conv1(input))
+        layer2Input = torch.cat([input, self.hid1], dim = 1)
+        layer2 = self.max_pool(layer2Input)
+        self.hid2 = F.relu(self.conv2(layer2))
+        layer3Input = torch.cat([input, self.hid1, self.hid2], dim = 1)
+        layer4 = self.max_pool(layer3Input)
+        layer5 = layer4.view(layer4.size(0), -1)  #flattening the inputs. 
+        self.hid3 = F.relu(self.fc_layer_1(layer5))
+        layer4Input = torch.cat([input, self.hid1, self.hid2, self.hid3], dim = 1)
+        layer7 = self.fc_layer_2(layer4Input)
+        self.hid4 = F.log_softmax(layer7, dim=1)
+        return self.hid4
+  
+
+    def forward(self, input):
+        input = input[-2]
+        print(input.shape)
+        self.hid1 = torch.tanh(self.lay1(input))
+        layer2Input = torch.cat([input, self.hid1], dim = 1)
+        self.hid2 = torch.tanh(self.lay2(layer2Input))
+        outInput = torch.cat([self.hid2, self.hid1, input], dim = 1)
+        return torch.sigmoid(self.lay3(outInput))
 
 net = Network()
     
 ############################################################################
 ######      Specify the optimizer and loss function                   ######
 ############################################################################
-optimizer = None
+optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.5)
 
-loss_func = None
+def loss_def(input, target):
+    return F.nll_loss(input, target, reduction='sum')
+
+loss_func = loss_def
 
 
 ############################################################################
@@ -78,7 +109,7 @@ scheduler = None
 ############################################################################
 #######              Metaparameters and training options              ######
 ############################################################################
-dataset = "./data"
+dataset = "./data/data"
 train_val_split = 0.8
 batch_size = 200
 epochs = 10
